@@ -25,11 +25,21 @@ int LastValue;
 volatile unsigned long Rotations;
 volatile unsigned long ContactBounceTime;
 float WindSpeed;
-
 unsigned long preMillis = 0;
-const long interval = 1000;
+const long intervalSpeed = 1000;
 
 
+
+// init rain gauge
+const byte RainDropPin = D3;
+const int intervalRain = 500;
+volatile unsigned long tiptime = millis();
+unsigned long tipcount;
+double rainrate;
+
+
+
+// wind speed count
 void isr_rotation () {
   if ((millis() - ContactBounceTime) > 15 ) { // debounce the switch contact.
     Rotations++;
@@ -37,6 +47,20 @@ void isr_rotation () {
   }
 }
 
+
+// rain drop count
+void countRain() {
+  unsigned long curtime = millis();
+
+  if ((curtime - tiptime) < intervalRain) {
+    return;
+  }
+
+  tipcount = curtime - tiptime;
+  tiptime = curtime;
+
+  rainrate = 914400.0 / tipcount;
+}
 
 
 // Converts compass direction to heading
@@ -75,14 +99,14 @@ void setup() {
   pinMode(WindSensorPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(WindSensorPin), isr_rotation, FALLING);
 
+  pinMode(RainDropPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(RainDropPin), countRain, FALLING);
 }
 
 
 void loop() {
-
-
   unsigned long curMillis = millis();
-  if (curMillis - preMillis >= interval) {
+  if (curMillis - preMillis >= intervalSpeed) {
     preMillis = curMillis;
 
     Rotations = 0;
@@ -103,6 +127,15 @@ void loop() {
     } else if (CalDirection < 0) {
       CalDirection = CalDirection + 360;
     }
+
+
+    Serial.print("Rain rate: ");
+    Serial.print(rainrate);
+    Serial.print(" mm/hr ");
+    
+    // clear rain drop
+    rainrate = 0;
+
     float t = dht.readTemperature();
     float h = dht.readHumidity();
 
