@@ -13,7 +13,7 @@ Adafruit_ADS1115 ads(0x48);
 
 //init dht
 #define DHTPIN D1
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
 
