@@ -8,11 +8,11 @@
 // init ads1115
 Adafruit_ADS1115 ads(0x48);
 #define Offset 0
-#define WindSensorPin D2
+#define WindSensorPin D3
 
 
 //init dht
-#define DHTPIN D1
+#define DHTPIN D4
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -31,7 +31,7 @@ const long intervalSpeed = 1000;
 
 
 // init rain gauge
-const byte RainDropPin = D3;
+const byte RainDropPin = 9;
 const int intervalRain = 500;
 volatile unsigned long tiptime = millis();
 unsigned long tipcount;
@@ -92,7 +92,7 @@ void setup() {
   Serial.begin(9600);
   delay(2000);
   dht.begin();
-  Wire.begin(D4, D5);
+  Wire.begin(D1, D2);
   ads.begin();
   LastValue = 1;
 

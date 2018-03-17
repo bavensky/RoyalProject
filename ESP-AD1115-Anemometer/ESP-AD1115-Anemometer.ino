@@ -4,7 +4,7 @@
 Adafruit_ADS1115 ads(0x48);
 
 #define Offset 0
-#define WindSensorPin D2
+#define WindSensorPin D3
 
 
 int VaneValue;// raw analog value from wind vane
@@ -54,7 +54,7 @@ void setup() {
   Serial.begin(9600);
   delay(2000);
 
-  Wire.begin(D4, D5);
+  Wire.begin(D1, D2);
   ads.begin();
   LastValue = 1;
 

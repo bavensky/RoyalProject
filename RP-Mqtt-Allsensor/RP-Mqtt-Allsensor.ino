@@ -1,3 +1,29 @@
+/*
+ * Royal Project Weather Station
+ * 
+ * nodeMCU     Sensor
+ * ===================
+ * D0       |   Wake Up
+ * D1       |   SDA
+ * D2       |   SCL
+ * D3       |   Wind
+ * D4       |   DHT
+ * D5       |   SD-CLK
+ * D6       |   SD-MISO
+ * D7       |   SD-MOSI
+ * D8       |   SD-CS
+ * SD2      |   Relay
+ * SD3      |   Rain drop
+ * 
+ * 
+ * 
+ * ampere :
+ * http://192.168.12.214:1880/
+ * 
+ */
+
+
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
@@ -12,9 +38,9 @@
 Adafruit_ADS1115 ads(0x48);
 
 #define Offset 0
-#define DHT_PIN D1
-#define WindSensorPin  D2
-#define RainDropPin    D3
+#define DHT_PIN D4
+#define WindSensorPin  9
+#define RainDropPin    10
 
 #include "init_mqtt.h"
 #include "_publish.h"
@@ -25,8 +51,10 @@ Adafruit_ADS1115 ads(0x48);
 MqttConnector *mqtt;
 DHT dht(DHT_PIN, DHT22);
 
+
+int relayPin            = 9;
 int relayPinState       = HIGH;
-int relayPin            = D0;
+
 
 char myName[40];
 
@@ -48,7 +76,7 @@ void init_hardware()
   dht.begin();
 
 
-  Wire.begin(D4, D5);
+  Wire.begin(D1, D2);
   ads.begin();
   LastValue = 1;
 
