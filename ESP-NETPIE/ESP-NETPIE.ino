@@ -6,21 +6,30 @@
 #include <Wire.h>
 #include <math.h>
 #include <Adafruit_ADS1015.h>
+#include <BH1750.h>
+#include "RTClib.h"
 #include "DHT.h"
 
 
 const char* ssid     = "ampere";
 const char* password = "espertap";
 
-//#define APPID   "RoyalProject"
-//#define KEY     "2glLm80GxdiQoDt"
-//#define SECRET  "5n42hrR3eoynJZdJyv93RH05U"
+#define APPID   "RoyalProjectStation"
+#define KEY     "knIlIaf3SoxmZoc"
+#define SECRET  "PBavMWrfGyrsdFgQRiZZXiM6h"
 
-#define APPID   "rpfew30021001"
-#define KEY     "FmB2CDjrdubJAWO"
-#define SECRET  "KASG7Ut1TbVXqJLt56nBEzARQ"
+//#define APPID   "rpfew30021001"
+//#define KEY     "FmB2CDjrdubJAWO"
+//#define SECRET  "KASG7Ut1TbVXqJLt56nBEzARQ"
 
-#define ALIAS   "rjSensor1"
+#define ALIAS   "royal1"
+
+// init RTC
+RTC_DS1307 rtc;
+
+
+// init BH1750
+BH1750 lightMeter;
 
 
 // init ads1115
@@ -89,24 +98,14 @@ void onConnected(char *attribute, uint8_t* msg, unsigned int msglen) {
 
 void setup() {
   /* Add Event listeners */
-
-  /* Call onMsghandler() when new message arraives */
   microgear.on(MESSAGE, onMsghandler);
-
-  /* Call onFoundgear() when new gear appear */
   microgear.on(PRESENT, onFoundgear);
-
-  /* Call onLostgear() when some gear goes offline */
   microgear.on(ABSENT, onLostgear);
-
-  /* Call onConnected() when NETPIE connection is established */
   microgear.on(CONNECTED, onConnected);
 
-  Serial.begin(115200);
-  Serial.println("Starting...");
 
-  /* Initial WIFI, this is just a basic method to configure WIFI on ESP8266.                       */
-  /* You may want to use other method that is more complicated, but provide better user experience */
+  Serial.begin(115200);
+  delay(2000);
   if (WiFi.begin(ssid, password)) {
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
@@ -114,20 +113,24 @@ void setup() {
     }
   }
 
+
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  /* Initial with KEY, SECRET and also set the ALIAS here */
-  microgear.init(KEY, SECRET, ALIAS);
 
-  /* connect to NETPIE to a specific APPID */
+  microgear.init(KEY, SECRET, ALIAS);
   microgear.connect(APPID);
 
 
+  rtc.begin();
+  //  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
-  dht.begin();
+
   Wire.begin(D1, D2);
+
+  lightMeter.begin();
+  dht.begin();
   ads.begin();
   LastValue = 1;
 
@@ -148,9 +151,7 @@ void loop() {
       preMillis = curMillis;
 
       Rotations = 0;
-      sei(); // Enables interrupts
-      delay(1000);
-      cli(); // Disable interrupts
+      sei(); delay(1000); cli();
 
       WindSpeed = Rotations * 0.75;
 
@@ -159,7 +160,6 @@ void loop() {
       Direction = map(VaneValue, 0, 1023, 0, 360);
       CalDirection = Direction + Offset;
 
-
       if (CalDirection > 360) {
         CalDirection = CalDirection - 360;
       } else if (CalDirection < 0) {
@@ -167,36 +167,102 @@ void loop() {
       }
 
 
-      Serial.print("Rain rate: ");
-      Serial.print(rainrate);
-      Serial.print(" mm/hr ");
 
       // clear rain drop
       rainrate = 0;
 
+      // read direction
+      getHeading(CalDirection);
+
+      // read temperature
       float t = dht.readTemperature();
       float h = dht.readHumidity();
 
-      Serial.print("Temp : "); Serial.print(t);
-      Serial.print("\tHumid : "); Serial.print(h);
 
-      //    Serial.print(Rotations); Serial.print("\t");
-      Serial.print("\tWind Speed : ");
-      Serial.print(WindSpeed); Serial.print("\t");
-      //    Serial.print(VaneValue); Serial.print("\t");
-      //    Serial.print(CalDirection); Serial.print("\t");
-      Serial.print("Direction : ");
-      getHeading(CalDirection);
+      // read voltage
+      float voltage = map(ads.readADC_SingleEnded(1), 0, 25000, 0, 1023) * (5.0 / 1023.0);
+
+
+      // read light
+      uint16_t lux = lightMeter.readLightLevel();
+
+
+      // update dateTime
+      DateTime now = rtc.now();
+      String _date = String(now.day()) + "/" + String(now.month()) + "/" + String(now.year());
+      String _time = String(now.hour()) + ":" + String(now.minute());
+
 
 
       // send to netpie
-      if(!isnan(t)) microgear.chat("rjSensor1/temp", String(t));
-      if(!isnan(h)) microgear.chat("rjSensor1/humid", String(h));
-      microgear.chat("rjSensor1/rain", String(rainrate));
-      microgear.chat("rjSensor1/wind", String(WindSpeed));
-      microgear.chat("rjSensor1/direc", String(windDirection));
+      char topic_date[MAXTOPICSIZE];
+      char topic_time[MAXTOPICSIZE];
+      char topic_temp[MAXTOPICSIZE];
+      char topic_humid[MAXTOPICSIZE];
+      char topic_rain[MAXTOPICSIZE];
+      char topic_wind[MAXTOPICSIZE];
+      char topic_direc[MAXTOPICSIZE];
+      char topic_light[MAXTOPICSIZE];
+      char topic_batt[MAXTOPICSIZE];
 
-      
+      sprintf(topic_date, "/gearname/%s/date", ALIAS);
+      sprintf(topic_time, "/gearname/%s/time", ALIAS);
+      sprintf(topic_temp, "/gearname/%s/temp", ALIAS);
+      sprintf(topic_humid, "/gearname/%s/humid", ALIAS);
+      sprintf(topic_rain, "/gearname/%s/rain", ALIAS);
+      sprintf(topic_wind, "/gearname/%s/wind", ALIAS);
+      sprintf(topic_direc, "/gearname/%s/direc", ALIAS);
+      sprintf(topic_light, "/gearname/%s/light", ALIAS);
+      sprintf(topic_batt, "/gearname/%s/batt", ALIAS);
+
+
+      microgear.publish(topic_date, String(_date), true);
+      microgear.publish(topic_time, String(_time), true);
+      microgear.publish(topic_temp, String(t), true);
+      microgear.publish(topic_humid, String(h), true);
+      microgear.publish(topic_rain, String(rainrate), true);
+      microgear.publish(topic_wind, String(WindSpeed), true);
+      microgear.publish(topic_direc, String(windDirection), true);
+      microgear.publish(topic_light, String(lux), true);
+      microgear.publish(topic_batt, String(voltage), true);
+
+      //      microgear.chat("rjSensor1/date", _date);
+      //      microgear.chat("rjSensor1/time", _time);
+      //      if (!isnan(t)) microgear.chat("rjSensor1/temp", String(t));
+      //      if (!isnan(h)) microgear.chat("rjSensor1/humid", String(h));
+      //      microgear.chat("rjSensor1/rain", String(rainrate));
+      //      microgear.chat("rjSensor1/wind", String(WindSpeed));
+      //      microgear.chat("rjSensor1/direc", String(windDirection));
+      //      microgear.chat("rjSensor1/light", String(lux));
+      //      microgear.chat("rjSensor1/batt", String(voltage));
+
+
+      Serial.print("Date: ");
+      Serial.print(_date);
+      Serial.print("\t Time: ");
+      Serial.println(_time);
+
+      Serial.print("Rain rate: ");
+      Serial.print(rainrate);
+      Serial.println(" mm/hr");
+
+      Serial.print("Temp : ");
+      Serial.print(t);
+      Serial.print("\tHumid : ");
+      Serial.println(h);
+
+      Serial.print("Wind Speed : ");
+      Serial.print(WindSpeed);
+      Serial.print("\tDirection : ");
+      Serial.println(windDirection);
+
+      Serial.print("lightMeter : ");
+      Serial.print(lux);
+      Serial.print("\tbatt : ");
+      Serial.print(voltage);
+
+      Serial.println(" ");
+      Serial.println(" ");
     }
   }
   else {

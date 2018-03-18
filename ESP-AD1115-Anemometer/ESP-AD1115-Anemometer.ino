@@ -65,7 +65,7 @@ void setup() {
 
 
 void loop() {
-  VaneValue = map(ads.readADC_SingleEnded(3), 0, 17550, 0, 1023);
+  VaneValue = map(ads.readADC_SingleEnded(3), 0, 25000, 0, 1023);
   Direction = map(VaneValue, 0, 1023, 0, 360);
   CalDirection = Direction + Offset;
 
@@ -82,8 +82,8 @@ void loop() {
 
   Rotations = 0;
   sei();
-  //  delay (1000);
-  //  cli();
+  delay (1000);
+  cli();
   // convert to mp/h using the formula V=P(2.25/T)
   // V = P(2.25/3) = P * 0.75
 
@@ -91,6 +91,7 @@ void loop() {
 
   Serial.print(Rotations); Serial.print("\t\t");
   Serial.print(WindSpeed); Serial.print("\t\t");
+  Serial.print(ads.readADC_SingleEnded(3)); Serial.print("\t\t");
   Serial.print(VaneValue); Serial.print("\t\t");
   Serial.print(CalDirection); Serial.print("\t\t");
   getHeading(CalDirection);

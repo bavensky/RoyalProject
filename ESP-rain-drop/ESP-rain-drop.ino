@@ -1,4 +1,4 @@
-#define RainDropPin    10 // GPIO10 | SD3
+#define RainDropPin    9 // GPIO10 | SD3
 
 // init rain gauge variable
 const int intervalRain = 500;
