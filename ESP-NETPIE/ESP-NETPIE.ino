@@ -195,36 +195,44 @@ void loop() {
 
 
       // send to netpie
-      char topic_date[MAXTOPICSIZE];
-      char topic_time[MAXTOPICSIZE];
-      char topic_temp[MAXTOPICSIZE];
-      char topic_humid[MAXTOPICSIZE];
-      char topic_rain[MAXTOPICSIZE];
-      char topic_wind[MAXTOPICSIZE];
-      char topic_direc[MAXTOPICSIZE];
-      char topic_light[MAXTOPICSIZE];
-      char topic_batt[MAXTOPICSIZE];
+      char topic_data[MAXTOPICSIZE];
 
-      sprintf(topic_date, "/gearname/%s/date", ALIAS);
-      sprintf(topic_time, "/gearname/%s/time", ALIAS);
-      sprintf(topic_temp, "/gearname/%s/temp", ALIAS);
-      sprintf(topic_humid, "/gearname/%s/humid", ALIAS);
-      sprintf(topic_rain, "/gearname/%s/rain", ALIAS);
-      sprintf(topic_wind, "/gearname/%s/wind", ALIAS);
-      sprintf(topic_direc, "/gearname/%s/direc", ALIAS);
-      sprintf(topic_light, "/gearname/%s/light", ALIAS);
-      sprintf(topic_batt, "/gearname/%s/batt", ALIAS);
+      //      char topic_date[MAXTOPICSIZE];
+      //      char topic_time[MAXTOPICSIZE];
+      //      char topic_temp[MAXTOPICSIZE];
+      //      char topic_humid[MAXTOPICSIZE];
+      //      char topic_rain[MAXTOPICSIZE];
+      //      char topic_wind[MAXTOPICSIZE];
+      //      char topic_direc[MAXTOPICSIZE];
+      //      char topic_light[MAXTOPICSIZE];
+      //      char topic_batt[MAXTOPICSIZE];
 
+      sprintf(topic_data, "/gearname/%s/data", ALIAS);
 
-      microgear.publish(topic_date, String(_date), true);
-      microgear.publish(topic_time, String(_time), true);
-      microgear.publish(topic_temp, String(t), true);
-      microgear.publish(topic_humid, String(h), true);
-      microgear.publish(topic_rain, String(rainrate), true);
-      microgear.publish(topic_wind, String(WindSpeed), true);
-      microgear.publish(topic_direc, String(windDirection), true);
-      microgear.publish(topic_light, String(lux), true);
-      microgear.publish(topic_batt, String(voltage), true);
+      //      sprintf(topic_date, "/gearname/%s/date", ALIAS);
+      //      sprintf(topic_time, "/gearname/%s/time", ALIAS);
+      //      sprintf(topic_temp, "/gearname/%s/temp", ALIAS);
+      //      sprintf(topic_humid, "/gearname/%s/humid", ALIAS);
+      //      sprintf(topic_rain, "/gearname/%s/rain", ALIAS);
+      //      sprintf(topic_wind, "/gearname/%s/wind", ALIAS);
+      //      sprintf(topic_direc, "/gearname/%s/direc", ALIAS);
+      //      sprintf(topic_light, "/gearname/%s/light", ALIAS);
+      //      sprintf(topic_batt, "/gearname/%s/batt", ALIAS);
+
+      String allData = String(_date) + "," + String(_time) + "," + String(t) + "," + String(h) + "," + String(rainrate)
+                       + "," + String(WindSpeed) + "," + String(windDirection) + "," + String(lux) + "," + String(voltage);
+
+      microgear.publish(topic_data, String(allData), true);
+
+      //      microgear.publish(topic_date, String(_date), true);
+      //      microgear.publish(topic_time, String(_time), true);
+      //      microgear.publish(topic_temp, String(t), true);
+      //      microgear.publish(topic_humid, String(h), true);
+      //      microgear.publish(topic_rain, String(rainrate), true);
+      //      microgear.publish(topic_wind, String(WindSpeed), true);
+      //      microgear.publish(topic_direc, String(windDirection), true);
+      //      microgear.publish(topic_light, String(lux), true);
+      //      microgear.publish(topic_batt, String(voltage), true);
 
       //      microgear.chat("rjSensor1/date", _date);
       //      microgear.chat("rjSensor1/time", _time);
