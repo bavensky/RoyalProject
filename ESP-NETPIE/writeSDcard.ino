@@ -1,5 +1,5 @@
 void firstSave() {
-  myFile = SD.open("DATALOGER.csv", FILE_WRITE);
+  myFile = SD.open("data.csv", FILE_WRITE);
   if (myFile) {
     myFile.println("Date, Time, Temperature, Humidity, Raindrop, WindSpeed, WindDirection, LightLevel, Voltage");
     myFile.close();
@@ -9,8 +9,8 @@ void firstSave() {
   }
 }
 
-void dataLog(String _temp, String _humid, String _rain, String _wind, String _direc, String _lux, String _volt ) {
-  myFile = SD.open("DATALOGER.csv", FILE_WRITE);
+void dataLog(String _temp, String _humid, String _rain, String _wind, String _direc, String _lux, String _volt) {
+  myFile = SD.open("data.csv", FILE_WRITE);
   if (myFile) {
     Serial.print("Writing to sd card...");
     DateTime now = rtc.now();
@@ -22,6 +22,7 @@ void dataLog(String _temp, String _humid, String _rain, String _wind, String _di
     myFile.print(now.second()); myFile.print(",");
     myFile.print(_temp); myFile.print(",");
     myFile.print(_humid); myFile.print(",");
+    myFile.print(_rain); myFile.print(",");
     myFile.print(_wind); myFile.print(",");
     myFile.print(_direc); myFile.print(",");
     myFile.print(_lux); myFile.print(",");

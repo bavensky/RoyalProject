@@ -139,12 +139,16 @@ void setup() {
       Serial.print(".");
     }
   }
-
-
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
+
+  if (!SD.begin(D8)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
 
   microgear.init(KEY, SECRET, ALIAS);
   microgear.connect(APPID);
