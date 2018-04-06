@@ -1,8 +1,32 @@
-/*  NETPIE ESP8266 basic sample                            */
-/*  More information visit : https://netpie.io             */
+/*
+   Royal Project Weather Station
+
+   nodeMCU     Sensor
+   ===================
+   D0       |   Wake Up
+   D1       |   SDA
+   D2       |   SCL
+   D3       |   Wind
+   D4       |   DHT
+   D5       |   SD-CLK
+   D6       |   SD-MISO
+   D7       |   SD-MOSI
+   D8       |   SD-CS
+   SD2      |   Relay
+   SD3      |   Rain drop
+
+
+
+   ampere :
+   http://192.168.12.214:1880/
+
+*/
+
 
 #include <ESP8266WiFi.h>
 #include <MicroGear.h>
+#include <SPI.h>
+#include <SD.h>
 #include <Wire.h>
 #include <math.h>
 #include <Adafruit_ADS1015.h>
@@ -23,6 +47,9 @@ const char* password = "espertap";
 //#define SECRET  "KASG7Ut1TbVXqJLt56nBEzARQ"
 
 #define ALIAS   "royal1"
+
+// init SD card
+File myFile;
 
 // init RTC
 RTC_DS1307 rtc;
@@ -52,7 +79,7 @@ volatile unsigned long Rotations;
 volatile unsigned long ContactBounceTime;
 float WindSpeed;
 unsigned long preMillis = 0;
-const long intervalSpeed = 5000;
+const long intervalSpeed = 10000;  // send data every 10 second
 String windDirection = "";
 
 // init rain gauge
@@ -124,7 +151,7 @@ void setup() {
 
 
   rtc.begin();
-  //  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  //    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
 
   Wire.begin(D1, D2);
@@ -140,6 +167,8 @@ void setup() {
   pinMode(RainDropPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(RainDropPin), countRain, FALLING);
 
+  firstSave();
+  delay(2000); // delay for write to sd card
 }
 
 void loop() {
@@ -165,7 +194,6 @@ void loop() {
       } else if (CalDirection < 0) {
         CalDirection = CalDirection + 360;
       }
-
 
 
       // clear rain drop
@@ -196,43 +224,43 @@ void loop() {
 
       // send to netpie
       char topic_data[MAXTOPICSIZE];
-
-      //      char topic_date[MAXTOPICSIZE];
-      //      char topic_time[MAXTOPICSIZE];
-      //      char topic_temp[MAXTOPICSIZE];
-      //      char topic_humid[MAXTOPICSIZE];
-      //      char topic_rain[MAXTOPICSIZE];
-      //      char topic_wind[MAXTOPICSIZE];
-      //      char topic_direc[MAXTOPICSIZE];
-      //      char topic_light[MAXTOPICSIZE];
-      //      char topic_batt[MAXTOPICSIZE];
+      char topic_date[MAXTOPICSIZE];
+      char topic_time[MAXTOPICSIZE];
+      char topic_temp[MAXTOPICSIZE];
+      char topic_humid[MAXTOPICSIZE];
+      char topic_rain[MAXTOPICSIZE];
+      char topic_wind[MAXTOPICSIZE];
+      char topic_direc[MAXTOPICSIZE];
+      char topic_light[MAXTOPICSIZE];
+      char topic_batt[MAXTOPICSIZE];
 
       sprintf(topic_data, "/gearname/%s/data", ALIAS);
-
-      //      sprintf(topic_date, "/gearname/%s/date", ALIAS);
-      //      sprintf(topic_time, "/gearname/%s/time", ALIAS);
-      //      sprintf(topic_temp, "/gearname/%s/temp", ALIAS);
-      //      sprintf(topic_humid, "/gearname/%s/humid", ALIAS);
-      //      sprintf(topic_rain, "/gearname/%s/rain", ALIAS);
-      //      sprintf(topic_wind, "/gearname/%s/wind", ALIAS);
-      //      sprintf(topic_direc, "/gearname/%s/direc", ALIAS);
-      //      sprintf(topic_light, "/gearname/%s/light", ALIAS);
-      //      sprintf(topic_batt, "/gearname/%s/batt", ALIAS);
+      sprintf(topic_date, "/gearname/%s/date", ALIAS);
+      sprintf(topic_time, "/gearname/%s/time", ALIAS);
+      sprintf(topic_temp, "/gearname/%s/temp", ALIAS);
+      sprintf(topic_humid, "/gearname/%s/humid", ALIAS);
+      sprintf(topic_rain, "/gearname/%s/rain", ALIAS);
+      sprintf(topic_wind, "/gearname/%s/wind", ALIAS);
+      sprintf(topic_direc, "/gearname/%s/direc", ALIAS);
+      sprintf(topic_light, "/gearname/%s/light", ALIAS);
+      sprintf(topic_batt, "/gearname/%s/batt", ALIAS);
 
       String allData = String(_date) + "," + String(_time) + "," + String(t) + "," + String(h) + "," + String(rainrate)
                        + "," + String(WindSpeed) + "," + String(windDirection) + "," + String(lux) + "," + String(voltage);
 
       microgear.publish(topic_data, String(allData), true);
+      microgear.publish(topic_date, String(_date), true);
+      microgear.publish(topic_time, String(_time), true);
+      microgear.publish(topic_temp, String(t), true);
+      microgear.publish(topic_humid, String(h), true);
+      microgear.publish(topic_rain, String(rainrate), true);
+      microgear.publish(topic_wind, String(WindSpeed), true);
+      microgear.publish(topic_direc, String(windDirection), true);
+      microgear.publish(topic_light, String(lux), true);
+      microgear.publish(topic_batt, String(voltage), true);
 
-      //      microgear.publish(topic_date, String(_date), true);
-      //      microgear.publish(topic_time, String(_time), true);
-      //      microgear.publish(topic_temp, String(t), true);
-      //      microgear.publish(topic_humid, String(h), true);
-      //      microgear.publish(topic_rain, String(rainrate), true);
-      //      microgear.publish(topic_wind, String(WindSpeed), true);
-      //      microgear.publish(topic_direc, String(windDirection), true);
-      //      microgear.publish(topic_light, String(lux), true);
-      //      microgear.publish(topic_batt, String(voltage), true);
+      dataLog(String(t), String(h), String(rainrate), String(WindSpeed), String(windDirection), String(lux), String(voltage));
+      delay(2000); // delay for write to sd card
 
       //      microgear.chat("rjSensor1/date", _date);
       //      microgear.chat("rjSensor1/time", _time);
